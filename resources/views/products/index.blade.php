@@ -153,11 +153,13 @@
                                 @csrf
                                 <input type="hidden" name="product_id" value="{{ $product->id }}">
                                 <input type="hidden" name="quantity" value="1">
+                @if(auth()->check() && auth()->user()->role === 'user')
 
                                 <button
                                     class="w-full rounded-full bg-yellow-400 px-4 py-2 text-sm font-medium text-gray-900 hover:bg-yellow-500 transition flex items-center justify-center gap-2">
                                     Add to Cart
                                 </button>
+                @endif
                             </form>
 
                             @if(auth()->check() && auth()->user()->role === 'admin')

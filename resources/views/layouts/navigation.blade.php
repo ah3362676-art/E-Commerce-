@@ -1,147 +1,190 @@
-<nav x-data="{ open: false }" class="bg-white border-b border-gray-100">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-16">
+<nav x-data="{ open: false }" class="sticky top-0 z-50 border-b border-gray-200 bg-white/95 backdrop-blur shadow-sm">
+    <div class="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
 
-            {{-- Left Side --}}
-            <div class="flex items-center">
-                {{-- Logo --}}
-                <a href="{{ route('dashboard') }}" class="text-xl font-bold text-gray-800">
-                    warda e-commerce
-                </a>
-
-                {{-- Desktop Links --}}
-@if(auth()->check() && auth()->user()->role === 'user')
-
-                <div class="hidden sm:flex space-x-8 ms-10">
-                    <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                        Dashboard
-                    </x-nav-link>
-                    @endif
-
-@if(auth()->check() && auth()->user()->role === 'admin')
-                <div class="hidden sm:flex space-x-8 ms-10">
-                    <x-nav-link :href="route('admin.dashboard')" :active="request()->routeIs('dashboard')">
-                        Dashboard
-                    </x-nav-link>
-                                        @endif
-
-@if(auth()->check() && auth()->user()->role === 'admin')
-                    <x-nav-link :href="route('users.index')" :active="request()->routeIs('users.*')">
-                        Users
-                    </x-nav-link>
-                    @endif
-                    <x-nav-link :href="route('categories.index')" :active="request()->routeIs('categories.*')">
-                        Categories
-                    </x-nav-link>
-
-                    <x-nav-link :href="route('products.index')" :active="request()->routeIs('products.*')">
-                        Products
-                    </x-nav-link>
-@if(auth()->check() && auth()->user()->role === 'user')
-                    <x-nav-link :href="route('cart.index')" :active="request()->routeIs('cart.*')">
-                        Cart
-                    </x-nav-link>
-            @endif
-
-
-@if(auth()->check() && auth()->user()->role === 'user')
-                    <x-responsive-nav-link :href="route('orders.index')">
-                         My-order
-                   </x-responsive-nav-link>
-                   @endif
-
-@if(auth()->check() && auth()->user()->role === 'admin')
-             <x-nav-link :href="route('admin.orders.index')" :active="request()->routeIs('admin.orders.*')">
-                        Orders
-             </x-nav-link>
-             @endif
-                </div>
-            </div>
-
-            {{-- Right Side --}}
-            <div class="hidden sm:flex items-center gap-4">
-                <span class="font-semibold text-gray-700">
-                    {{ Auth::user()->name ??"Guest" }}
+        {{-- Left Side --}}
+        <div class="flex items-center gap-10">
+            {{-- Logo / Brand --}}
+            <a href="{{ auth()->check() && auth()->user()->role === 'admin' ? route('admin.dashboard') : route('dashboard') }}"
+               class="flex items-center gap-2 text-2xl font-extrabold tracking-tight text-gray-900">
+                <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 text-sm font-bold text-white shadow">
+                    W
                 </span>
+                <span>Warda Store</span>
+            </a>
+
+            {{-- Desktop Links --}}
+            @auth
+                <div class="hidden items-center gap-2 sm:flex">
+
+                    @if(auth()->user()->role === 'user')
+                        <a href="{{ route('dashboard') }}"
+                           class="rounded-lg px-4 py-2 text-sm font-medium transition {{ request()->routeIs('dashboard') ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700 hover:bg-gray-100 hover:text-indigo-600' }}">
+                            Dashboard
+                        </a>
+                    @endif
+
+                    @if(auth()->user()->role === 'admin')
+                        <a href="{{ route('admin.dashboard') }}"
+                           class="rounded-lg px-4 py-2 text-sm font-medium transition {{ request()->routeIs('admin.dashboard') ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700 hover:bg-gray-100 hover:text-indigo-600' }}">
+                            Dashboard
+                        </a>
+
+                        <a href="{{ route('users.index') }}"
+                           class="rounded-lg px-4 py-2 text-sm font-medium transition {{ request()->routeIs('users.*') ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700 hover:bg-gray-100 hover:text-indigo-600' }}">
+                            Users
+                        </a>
+                    @endif
+
+                    <a href="{{ route('categories.index') }}"
+                       class="rounded-lg px-4 py-2 text-sm font-medium transition {{ request()->routeIs('categories.*') ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700 hover:bg-gray-100 hover:text-indigo-600' }}">
+                        Categories
+                    </a>
+
+                    <a href="{{ route('products.index') }}"
+                       class="rounded-lg px-4 py-2 text-sm font-medium transition {{ request()->routeIs('products.*') ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700 hover:bg-gray-100 hover:text-indigo-600' }}">
+                        Products
+                    </a>
+
+                    @if(auth()->user()->role === 'user')
+                        <a href="{{ route('cart.index') }}"
+                           class="rounded-lg px-4 py-2 text-sm font-medium transition {{ request()->routeIs('cart.*') ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700 hover:bg-gray-100 hover:text-indigo-600' }}">
+                            Cart
+                        </a>
+
+                        <a href="{{ route('orders.index') }}"
+                           class="rounded-lg px-4 py-2 text-sm font-medium transition {{ request()->routeIs('orders.*') ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700 hover:bg-gray-100 hover:text-indigo-600' }}">
+                            My Orders
+                        </a>
+                    @endif
+
+                    @if(auth()->user()->role === 'admin')
+                        <a href="{{ route('admin.orders.index') }}"
+                           class="rounded-lg px-4 py-2 text-sm font-medium transition {{ request()->routeIs('admin.orders.*') ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700 hover:bg-gray-100 hover:text-indigo-600' }}">
+                            Orders
+                        </a>
+                    @endif
+
+                </div>
+            @endauth
+        </div>
+
+        {{-- Right Side --}}
+        <div class="hidden items-center gap-3 sm:flex">
+            @auth
+                <div class="flex items-center gap-3 rounded-full border border-gray-200 bg-gray-50 px-4 py-2">
+                    <div class="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-100 text-sm font-bold text-indigo-700">
+                        {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
+                    </div>
+
+                    <div class="leading-tight">
+                        <p class="text-sm font-semibold text-gray-800">{{ Auth::user()->name }}</p>
+                        <p class="text-xs text-gray-500 capitalize">{{ Auth::user()->role }}</p>
+                    </div>
+                </div>
 
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
                     <button type="submit"
-                        class="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700">
+                        class="rounded-xl bg-red-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-red-600">
                         Log Out
                     </button>
                 </form>
-            </div>
+            @else
+                <a href="{{ route('login') }}"
+                   class="rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100">
+                    Login
+                </a>
 
-            {{-- Mobile Menu Button --}}
-            <div class="sm:hidden flex items-center">
-                <button @click="open = ! open"
-                    class="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100">
-                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path :class="{'hidden': open, 'inline-flex': !open }"
-                            stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M4 6h16M4 12h16M4 18h16" />
-                        <path :class="{'hidden': !open, 'inline-flex': open }"
-                            stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
-            </div>
+                <a href="{{ route('register') }}"
+                   class="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">
+                    Register
+                </a>
+            @endauth
+        </div>
+
+        {{-- Mobile Button --}}
+        <div class="sm:hidden">
+            <button @click="open = !open"
+                class="inline-flex items-center justify-center rounded-lg p-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path :class="{ 'hidden': open, 'inline-flex': !open }"
+                          class="inline-flex"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M4 6h16M4 12h16M4 18h16" />
+                    <path :class="{ 'hidden': !open, 'inline-flex': open }"
+                          class="hidden"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
         </div>
     </div>
 
     {{-- Mobile Menu --}}
-    <div :class="{'block': open, 'hidden': !open}" class="hidden sm:hidden">
-        <div class="pt-2 pb-3 space-y-1">
-            <x-responsive-nav-link :href="route('dashboard')">
-                Dashboard
-            </x-responsive-nav-link>
+    <div x-show="open" x-transition class="border-t border-gray-200 bg-white sm:hidden">
+        <div class="space-y-1 px-4 py-4">
 
-@if(auth()->check() && auth()->user()->role === 'admin')
+            @auth
+                @if(auth()->user()->role === 'user')
+                    <a href="{{ route('dashboard') }}" class="block rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100">
+                        Dashboard
+                    </a>
+                @endif
 
-            <x-responsive-nav-link :href="route('users.index')">
-                Users
-            </x-responsive-nav-link>
-@endif
-            <x-responsive-nav-link :href="route('categories.index')">
-                Categories
-            </x-responsive-nav-link>
+                @if(auth()->user()->role === 'admin')
+                    <a href="{{ route('admin.dashboard') }}" class="block rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100">
+                        Dashboard
+                    </a>
 
-            <x-responsive-nav-link :href="route('products.index')">
-                Products
-            </x-responsive-nav-link>
-@if(auth()->check() && auth()->user()->role === 'user')
-            <x-responsive-nav-link :href="route('cart.index')">
-                Cart
-            </x-responsive-nav-link>
-            @endif
+                    <a href="{{ route('users.index') }}" class="block rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100">
+                        Users
+                    </a>
+                @endif
 
-@if(auth()->check() && auth()->user()->role === 'user')
-              <x-responsive-nav-link :href="route('orders.index')">
-                my-order
-            </x-responsive-nav-link>
-                    @endif
+                <a href="{{ route('categories.index') }}" class="block rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100">
+                    Categories
+                </a>
 
+                <a href="{{ route('products.index') }}" class="block rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100">
+                    Products
+                </a>
 
-@if(auth()->check() && auth()->user()->role === 'admin')
-            <x-nav-link :href="route('admin.orders.index')" :active="request()->routeIs('admin.orders.*')">
-            Orders
-              </x-nav-link>
-        </div>
-        @endif
+                @if(auth()->user()->role === 'user')
+                    <a href="{{ route('cart.index') }}" class="block rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100">
+                        Cart
+                    </a>
 
-        <div class="border-t pt-4 pb-2 px-4">
-            <div class="font-medium text-gray-800">
-                {{ Auth::user()->name?? "Guest" }}
-            </div>
+                    <a href="{{ route('orders.index') }}" class="block rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100">
+                        My Orders
+                    </a>
+                @endif
 
-            <form method="POST" action="{{ route('logout') }}" class="mt-3">
-                @csrf
-                <button type="submit"
-                    class="w-full text-left text-red-600 px-3 py-2 hover:bg-gray-100 rounded">
-                    Log Out
-                </button>
-            </form>
+                @if(auth()->user()->role === 'admin')
+                    <a href="{{ route('admin.orders.index') }}" class="block rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100">
+                        Orders
+                    </a>
+                @endif
+
+                <div class="mt-4 border-t border-gray-200 pt-4">
+                    <div class="mb-3 rounded-xl bg-gray-50 px-4 py-3">
+                        <p class="text-sm font-semibold text-gray-800">{{ Auth::user()->name }}</p>
+                        <p class="text-xs text-gray-500 capitalize">{{ Auth::user()->role }}</p>
+                    </div>
+
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button type="submit"
+                            class="w-full rounded-xl bg-red-500 px-4 py-2 text-left text-sm font-semibold text-white hover:bg-red-600">
+                            Log Out
+                        </button>
+                    </form>
+                </div>
+            @endauth
+
         </div>
     </div>
 </nav>
