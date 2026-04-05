@@ -24,7 +24,7 @@
                             {{-- Phone --}}
                             <div>
                                 <label for="phone" class="mb-2 block text-sm font-medium text-gray-700">
-                                    Phone
+                                    Phone *
                                 </label>
                                 <input
                                     type="text"
@@ -42,7 +42,7 @@
                             {{-- Address --}}
                             <div>
                                 <label for="address" class="mb-2 block text-sm font-medium text-gray-700">
-                                    Address
+                                    Address *
                                 </label>
                                 <textarea
                                     name="address"

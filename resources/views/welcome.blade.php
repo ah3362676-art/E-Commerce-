@@ -11,7 +11,7 @@
     <nav class="bg-white shadow">
         <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
 
-            <h1 class="text-xl font-bold text-gray-800">E-Commerce</h1>
+            <h1 class="text-xl font-bold text-gray-800"> warda store </h1>
 
             <div class="space-x-4">
                 @auth
