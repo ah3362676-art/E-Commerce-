@@ -32,7 +32,6 @@ npm install && npm run dev
 ### Dashboard
 ![Dashboard](images/dashboard.png)
 
-## 📸 Screenshots
 
 ### Products
 ![Products](images/products.png)
