@@ -5,17 +5,25 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreCategoryRequest;
 use App\Http\Requests\UpdateCategoryRequest;
 use App\Models\Category;
-use Illuminate\Http\Request;
+use App\Repositories\Interfaces\CategoryRepositoryInterface;
 
 class CategoryController extends Controller
 {
+    protected CategoryRepositoryInterface $categoryRepository;
+
+    public function __construct(CategoryRepositoryInterface $categoryRepository)
+    {
+        $this->categoryRepository = $categoryRepository;
+    }
+
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        $categories=  Category::latest()->paginate(10);
-        return view("categories.index", compact("categories"));
+        $categories = $this->categoryRepository->getAllPaginated(10);
+
+        return view('categories.index', compact('categories'));
     }
 
     /**
@@ -23,7 +31,7 @@ class CategoryController extends Controller
      */
     public function create()
     {
-        return view("categories.create");
+        return view('categories.create');
     }
 
     /**
@@ -31,20 +39,23 @@ class CategoryController extends Controller
      */
     public function store(StoreCategoryRequest $request)
     {
-        $data= $request->validated();
-        Category::create($data);
-        return redirect()->route("categories.index")->with("success", "Category created successfully");
+        $data = $request->validated();
+
+        $this->categoryRepository->create($data);
+
+        return redirect()
+            ->route('categories.index')
+            ->with('success', 'Category created successfully');
     }
-
-
 
     /**
      * Show the form for editing the specified resource.
      */
     public function edit(string $id)
     {
-        $category= Category::findOrFail($id);
-        return view("categories.edit", compact("category"));
+        $category = $this->categoryRepository->findById((int) $id);
+
+        return view('categories.edit', compact('category'));
     }
 
     /**
@@ -52,10 +63,15 @@ class CategoryController extends Controller
      */
     public function update(UpdateCategoryRequest $request, string $id)
     {
-        $category= Category::findOrFail($id);
-        $data= $request->validated();
-        $category->update($data);
-        return redirect()->route("categories.index")->with("success", "Category updated successfully");
+        $category = $this->categoryRepository->findById((int) $id);
+
+        $data = $request->validated();
+
+        $this->categoryRepository->update($category, $data);
+
+        return redirect()
+            ->route('categories.index')
+            ->with('success', 'Category updated successfully');
     }
 
     /**
@@ -63,8 +79,12 @@ class CategoryController extends Controller
      */
     public function destroy(string $id)
     {
-        $category= Category::findOrFail($id);
-        $category->delete();
-        return redirect()->route("categories.index")->with("success", "Category deleted successfully");
+        $category = $this->categoryRepository->findById((int) $id);
+
+        $this->categoryRepository->delete($category);
+
+        return redirect()
+            ->route('categories.index')
+            ->with('success', 'Category deleted successfully');
     }
 }

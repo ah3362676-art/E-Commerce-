@@ -2,37 +2,46 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\ProductCreated;
+use App\Events\ProductDeleted;
+use App\Events\ProductUpdated;
 use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
 use App\Models\Category;
 use App\Models\Product;
+use App\Repositories\Interfaces\ProductRepositoryInterface;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
+    protected ProductRepositoryInterface $productRepository;
+
+    public function __construct(ProductRepositoryInterface $productRepository)
+    {
+        $this->productRepository = $productRepository;
+    }
+
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-       $query = Product::with('category',"images");
-       if(request()->filled('search')){
-        $query->where("title","like","%".request()->search."%");
-       }
-       if(request()->filled('category_id')){
-        $query->where("category_id", request()->category_id);
-       }
-       $products = $query->latest()->paginate(10);
+        $filters = [
+            'search' => request('search'),
+            'category_id' => request('category_id'),
+        ];
 
-       $categories = Category::all();
+        $products = $this->productRepository->getFilteredPaginatedProducts($filters, 10);
+
+        $categories = Category::all();
 
         return view('products.index', compact('products', 'categories'));
     }
 
-     public function show(Product $product)
+    public function show(Product $product)
     {
-         $product->load(["category","images"]);
+        $product = $this->productRepository->findWithRelations($product);
+
         return view('products.show', compact('product'));
     }
 
@@ -41,7 +50,8 @@ class ProductController extends Controller
      */
     public function create()
     {
-       $categories = Category::where('is_active', true)->orderBy('name')->get();
+        $categories = Category::where('is_active', true)->orderBy('name')->get();
+
         return view('products.create', compact('categories'));
     }
 
@@ -50,72 +60,81 @@ class ProductController extends Controller
      */
     public function store(StoreProductRequest $request)
     {
-        $data = $request->safe()->except('images');  // هات كل البيانات معدا الصور عشن هي ف جدول تاني
-        $product=Product::create($data);
-        if($request->hasfile("images")){
-            foreach($request->file("images") as $image){
-                $path = $image->store('products', 'public');   // اسم الفولدلار واسم الديسك
+        $data = $request->safe()->except('images');
+
+        $product = $this->productRepository->create($data);
+
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $image) {
+                $path = $image->store('products', 'public');
+
                 $product->images()->create([
                     'image' => $path
-                    ]);
+                ]);
             }
         }
+        $product->load(['category', 'images']);
+        event(new ProductCreated($product->fresh()));
 
         return redirect()
-        ->route('products.index')
-        ->with('success', 'Product created successfully.');
+            ->route('products.index')
+            ->with('success', 'Product created successfully.');
     }
-
-
 
     /**
      * Show the form for editing the specified resource.
      */
     public function edit($id)
     {
-// $product->load('images');
-         $product = Product::with('images')->findOrFail($id);
-         $categories = Category::where('is_active', true)->orderBy('name')->get();
-         return view('products.edit', compact('product', 'categories'));
+        $product = $this->productRepository->findForEdit($id);
+
+        $categories = Category::where('is_active', true)->orderBy('name')->get();
+
+        return view('products.edit', compact('product', 'categories'));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateProductRequest $request,product $product)
+    public function update(UpdateProductRequest $request, Product $product)
     {
         $data = $request->safe()->except('images');
-        $product->update($data);
-        if($request->hasfile("images")){
-            foreach($request->file("images") as $image){
+
+        $this->productRepository->update($product, $data);
+
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $image) {
                 $path = $image->store('products', 'public');
+
                 $product->images()->create([
                     'image' => $path
-                    ]);
+                ]);
             }
         }
+event(new ProductUpdated($product->fresh()));
         return redirect()
-        ->route('products.index')
-        ->with('success', 'Product updated successfully.');
+            ->route('products.index')
+            ->with('success', 'Product updated successfully.');
     }
 
     /**
      * Remove the specified resource from storage.
      */
+   public function destroy(Product $product)
+{
+    $deletedProduct = [
+        'id' => $product->id,
+        'title' => $product->title,
+    ];
 
-    public function destroy(Product $product)
-    {
-        foreach ($product->images as $image) {
-            if ($image->image && Storage::disk('public')->exists($image->image)) {
-                Storage::disk('public')->delete($image->image);
-            }
-        }
+    $deleted = $this->productRepository->delete($product);
 
-        $product->delete();
-
-        return redirect()
-            ->route('products.index')
-            ->with('success', 'Product deleted successfully.');
+    if ($deleted) {
+        event(new ProductDeleted($deletedProduct));
     }
 
+    return redirect()
+        ->route('products.index')
+        ->with('success', 'Product deleted successfully.');
+}
 }

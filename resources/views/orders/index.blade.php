@@ -1,4 +1,5 @@
 <x-app-layout>
+    <div id="notifications" class="fixed top-5 right-5 z-50 space-y-3"></div>
     <div class="py-8 bg-gray-100 min-h-screen">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
@@ -41,7 +42,9 @@
                                     ];
                                 @endphp
 
-                                <span class="inline-flex w-fit items-center rounded-full border px-4 py-1.5 text-xs font-semibold {{ $statusColors[$order->status] ?? 'bg-gray-100 text-gray-700 border-gray-200' }}">
+                                <span
+                                id="order-status-{{ $order->id }}"
+                                class="inline-flex w-fit items-center rounded-full border px-4 py-1.5 text-xs font-semibold {{ $statusColors[$order->status] ?? 'bg-gray-100 text-gray-700 border-gray-200' }}">
                                     {{ ucfirst($order->status) }}
                                 </span>
                             </div>

@@ -2,42 +2,42 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CartItem;
 use App\Http\Requests\StoreCartItemRequest;
 use App\Http\Requests\UpdateCartItemRequest;
-use App\Models\CartItem;
-use Illuminate\Http\Request;
+use App\Repositories\Interfaces\CartRepositoryInterface;
 
 class CartController extends Controller
 {
-public function index()
-{
-    $cartItems = CartItem::with(['product.images', 'product.category'])
-        ->where('user_id', auth()->id())
-        ->latest()
-        ->get()
-        ->filter(function ($item) {
-            return $item->product !== null;
-        });
+    protected CartRepositoryInterface $cartRepository;
 
-    $total = $cartItems->sum(function ($item) {
-        return $item->product->price * $item->quantity;
-    });
+    public function __construct(CartRepositoryInterface $cartRepository)
+    {
+        $this->cartRepository = $cartRepository;
+    }
 
-    return view('cart.index', compact('cartItems', 'total'));
-}
+    public function index()
+    {
+        $cartItems = $this->cartRepository->getUserCartItems(auth()->id());
+
+        $total = $this->cartRepository->calculateTotal($cartItems);
+
+        return view('cart.index', compact('cartItems', 'total'));
+    }
 
     public function store(StoreCartItemRequest $request)
     {
         $data = $request->validated();
 
-        $cartItem = CartItem::where('user_id', auth()->id())
-            ->where('product_id', $data['product_id'])
-            ->first();
+        $cartItem = $this->cartRepository->findUserCartItemByProductId(
+            auth()->id(),
+            $data['product_id']
+        );
 
         if ($cartItem) {
-            $cartItem->increment('quantity', $data['quantity']);
+            $this->cartRepository->incrementQuantity($cartItem, $data['quantity']);
         } else {
-            CartItem::create([
+            $this->cartRepository->create([
                 'user_id' => auth()->id(),
                 'product_id' => $data['product_id'],
                 'quantity' => $data['quantity'],
@@ -55,9 +55,10 @@ public function index()
             abort(403);
         }
 
-        $cartItem->update([
-            'quantity' => $request->validated()['quantity'],
-        ]);
+        $this->cartRepository->updateQuantity(
+            $cartItem,
+            $request->validated()['quantity']
+        );
 
         return redirect()
             ->route('cart.index')
@@ -70,7 +71,7 @@ public function index()
             abort(403);
         }
 
-        $cartItem->delete();
+        $this->cartRepository->delete($cartItem);
 
         return redirect()
             ->route('cart.index')

@@ -8,6 +8,9 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductImageController;
 use Illuminate\Support\Facades\Route;
+use App\Events\TestEvent;
+
+
 
 Route::get('/', function () {
     return view('welcome');
@@ -79,5 +82,11 @@ Route::middleware('auth')->group(function () {
 
 // show route لازم يكون في الآخر
 Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
+
+
+Route::get('/test-broadcast', function () {
+    event(new TestEvent('Hello from Laravel 🔥'));
+    return 'Event sent';
+});
 
 require __DIR__.'/auth.php';

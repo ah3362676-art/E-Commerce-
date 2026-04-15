@@ -1,4 +1,5 @@
 <x-app-layout>
+    <div id="notifications" class="fixed top-5 right-5 z-50 space-y-3"></div>
     <div class="py-8 bg-gray-100 min-h-screen">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
@@ -11,13 +12,14 @@
 
             {{-- Header --}}
             <div class="mb-8">
+                <p id="test-orders-page" class="mb-4 text-red-600 font-bold">ORDERS PAGE TEST</p>
                 <h1 class="text-3xl font-bold text-gray-800">Orders Management</h1>
                 <p class="mt-1 text-sm text-gray-500">Manage and update all customer orders</p>
             </div>
 
             {{-- Orders List --}}
-            <div class="space-y-6">
-                @forelse($orders as $order)
+            <div id="orders-container" class="space-y-6">
+                  @forelse($orders as $order)
                     <div class="overflow-hidden rounded-2xl bg-white shadow transition hover:shadow-lg">
 
                         {{-- Order Header --}}

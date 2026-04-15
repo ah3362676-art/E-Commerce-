@@ -5,17 +5,24 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Models\User;
+use App\Repositories\Interfaces\UserRepositoryInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
+    protected UserRepositoryInterface $userRepository;
+
+    public function __construct(UserRepositoryInterface $userRepository)
+    {
+        $this->userRepository = $userRepository;
+    }
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        $users = User::latest()->paginate(10);
+        $users = $this->userRepository->getAllPaginated();
         return view("users.index",compact("users"));
     }
 
@@ -35,9 +42,10 @@ class UserController extends Controller
 $data = $request->validated();
 $data["password"]=Hash::make($data["password"]);
 
-User::create($data);
+ $this->userRepository->create($data);
 
-return redirect()->route("users.index")
+return redirect()
+->route("users.index")
 ->with("success","User created successfully");
 }
 
@@ -54,7 +62,7 @@ return redirect()->route("users.index")
      */
     public function edit(string $id)
     {
-        $user= User::findOrFail($id);
+        $user= $this->userRepository->findById($id);
         return view("users.edit",compact("user"));
     }
 
@@ -63,7 +71,7 @@ return redirect()->route("users.index")
      */
     public function update(UpdateUserRequest $request,$id)
     {
-        $user = User::findOrFail($id);
+     $user = $this->userRepository->findById($id);
      $data = $request->validated();
      if(!empty($data["password"])){
         $data["password"]=Hash::make($data["password"]);
@@ -72,8 +80,9 @@ return redirect()->route("users.index")
              };
         unset($data['password_confirmation']);
 
-        $user->update($data);
-        return redirect()->route("users.index")
+$this->userRepository->update($user, $data);
+        return redirect()
+        ->route("users.index")
         ->with("success","User updated successfully");
     }
 
@@ -82,8 +91,8 @@ return redirect()->route("users.index")
      */
     public function destroy(string $id)
     {
-        $user =User::findOrFail($id);
-        $user->delete();
+$user = $this->userRepository->findById($id);
+$this->userRepository->delete($user);
         return redirect()->route("users.index")
         ->with("success","User deleted successfully");
     }

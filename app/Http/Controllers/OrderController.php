@@ -2,123 +2,110 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\OrderCreated;
+use App\Events\OrderStatusUpdated;
 use App\Http\Requests\adminRequest;
 use App\Http\Requests\StoreOrderRequest;
-use App\Models\CartItem;
-use App\Models\Order;
+use App\Repositories\Interfaces\CartRepositoryInterface;
+use App\Repositories\Interfaces\OrderRepositoryInterface;
 use Illuminate\Support\Facades\DB;
 
 class OrderController extends Controller
 {
-   public function create()
-{
-    $cartItems = CartItem::with(['product.images'])
-        ->where('user_id', auth()->id())
-        ->latest()
-        ->get()
-        ->filter(function ($item) {
-            return $item->product !== null;
-        });
+    protected CartRepositoryInterface $cartRepository;
+    protected OrderRepositoryInterface $orderRepository;
 
-    if ($cartItems->isEmpty()) {
-        return redirect()
-            ->route('cart.index')
-            ->with('success', 'Your cart is empty.');
+    public function __construct(
+        CartRepositoryInterface $cartRepository,
+        OrderRepositoryInterface $orderRepository
+    ) {
+        $this->cartRepository = $cartRepository;
+        $this->orderRepository = $orderRepository;
     }
 
-    $total = $cartItems->sum(function ($item) {
-        return $item->product->price * $item->quantity;
-    });
+    public function create()
+    {
+        $cartItems = $this->cartRepository->getUserCartItems(auth()->id());
 
-    return view('checkout.create', compact('cartItems', 'total'));
-}
-
-  public function store(StoreOrderRequest $request)
-{
-    $cartItems = CartItem::with('product')
-        ->where('user_id', auth()->id())
-        ->get()
-        ->filter(function ($item) {
-            return $item->product !== null;
-        });
-
-    if ($cartItems->isEmpty()) {
-        return redirect()
-            ->route('cart.index')
-            ->with('error', 'Your cart is empty.');
-    }
-
-    DB::transaction(function () use ($request, $cartItems) {    // يعني كل اللي جواها يا يحصل كله يا ما يحصلش أي حاجة
-
-        // 🟢 حساب التوتال
-        $total = $cartItems->sum(function ($item) {
-            return $item->product->price * $item->quantity;
-        });
-
-        // 🟢 إنشاء الأوردر
-        $order = Order::create([
-            'user_id' => auth()->id(),
-            'total' => $total,
-            'status' => 'pending',
-            'phone' => $request->phone,
-            'address' => $request->address,
-            'notes' => $request->notes,
-        ]);
-
-        foreach ($cartItems as $item) {
-
-
-
-            // 🟢 إنشاء order item
-            $order->items()->create([
-                'product_id' => $item->product_id,
-                'quantity' => $item->quantity,
-                'price' => $item->product->price,
-            ]);
-
-            // 🟢 تقليل المخزون
-            $item->product->decrement('stock', $item->quantity);
+        if ($cartItems->isEmpty()) {
+            return redirect()
+                ->route('cart.index')
+                ->with('success', 'Your cart is empty.');
         }
 
-        // 🟢 مسح الكارت
-        CartItem::where('user_id', auth()->id())->delete();
-    });
+        $total = $this->cartRepository->calculateTotal($cartItems);
 
-    return redirect()
-        ->route('orders.index')
-        ->with('success', 'Order placed successfully.');
-}
+        return view('checkout.create', compact('cartItems', 'total'));
+    }
+
+    public function store(StoreOrderRequest $request)
+    {
+        $cartItems = $this->cartRepository->getUserCartItems(auth()->id());
+
+        if ($cartItems->isEmpty()) {
+            return redirect()
+                ->route('cart.index')
+                ->with('error', 'Your cart is empty.');
+        }
+
+        $order = DB::transaction(function () use ($request, $cartItems) {
+            $total = $this->cartRepository->calculateTotal($cartItems);
+
+            $order = $this->orderRepository->create([
+                'user_id' => auth()->id(),
+                'total' => $total,
+                'status' => 'pending',
+                'phone' => $request->phone,
+                'address' => $request->address,
+                'notes' => $request->notes,
+            ]);
+
+            foreach ($cartItems as $item) {
+                $order->items()->create([
+                    'product_id' => $item->product_id,
+                    'quantity' => $item->quantity,
+                    'price' => $item->product->price,
+                ]);
+
+                $item->product->decrement('stock', $item->quantity);
+            }
+
+            foreach ($cartItems as $item) {
+                $this->cartRepository->delete($item);
+            }
+
+            return $order;
+        });
+
+        event(new OrderCreated($order));
+
+        return redirect()
+            ->route('orders.index')
+            ->with('success', 'Order placed successfully.');
+    }
 
     public function index()
     {
-        $orders = Order::with('items.product')
-            ->where('user_id', auth()->id())
-            ->latest()
-            ->paginate(10);
+        $orders = $this->orderRepository->getUserOrdersPaginated(auth()->id(), 10);
 
         return view('orders.index', compact('orders'));
     }
 
-
     public function adminIndex()
-{
-    $orders = Order::with(['user', 'items.product'])
-        ->latest()
-        ->paginate(10);
+    {
+        $orders = $this->orderRepository->getAdminOrdersPaginated(10);
 
-    return view('admin.orders.index', compact('orders'));
-}
+        return view('admin.orders.index', compact('orders'));
+    }
 
+    public function updateStatus(adminRequest $request, \App\Models\Order $order)
+    {
+        $this->orderRepository->update($order, [
+            'status' => $request->status,
+        ]);
 
-public function updateStatus(adminRequest $request, Order $order)
-{
+        event(new OrderStatusUpdated($order));
 
-
-    $order->update([
-        'status' => $request->status,
-    ]);
-
-    return back()
-    ->with('success', 'Order status updated.');
-}
+        return back()->with('success', 'Order status updated.');
+    }
 }
